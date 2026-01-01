@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ninjafight — Smash-lite</title>
+  <link rel="icon" href="favicon.svg" />
+  <link rel="manifest" href="site.webmanifest" />
+  <style>
+    :root{
+      --bg:#0a0f1a; --panel:#0e1724; --muted:#9aa8bf; --accent:#ff6b6b;
+      --ui:#0f2636; --white:#eaf2ff;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;}
+    body{background:linear-gradient(180deg,#051226,#0a0f1a);color:var(--white);display:flex;flex-direction:column;align-items:center;padding:18px;box-sizing:border-box}
+    header{width:100%;max-width:1100px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    h1{margin:0;font-size:20px;letter-spacing:1px}
+    #ui{width:100%;max-width:1100px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);padding:12px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    #stage{display:flex;gap:12px;align-items:flex-start}
+    #canvas-wrap{background:var(--panel);padding:8px;border-radius:8px}
+    canvas{display:block;background:#071225;border-radius:6px;width:960px;height:540px;max-width:100%}
+    #sidebar{width:300px;padding:8px}
+    .panel{background:var(--ui);padding:10px;border-radius:8px;margin-bottom:10px}
+    .label{font-size:13px;color:var(--muted);margin-bottom:6px}
+    .chars{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+    .char-tile{height:50px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#071225;font-weight:700;cursor:pointer;user-select:none}
+    .char-tile.selected{outline:3px solid rgba(255,255,255,0.06)}
+    .maps{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .map-tile{height:56px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--white);font-weight:700;cursor:pointer}
+    .map-tile.selected{outline:3px solid rgba(255,255,255,0.06)}
+    button{background:linear-gradient(180deg,#1b2e40,#142332);color:var(--white);border:0;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700}
+    #status{display:flex;gap:8px;align-items:center}
+    .muted{color:var(--muted);font-size:13px}
+    .center{display:flex;align-items:center;justify-content:center}
+    #overlay{position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+    #modal{pointer-events:auto;background:rgba(6,10,16,0.9);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);text-align:center;max-width:520px}
+    .big{font-size:20px;font-weight:800;margin-bottom:8px}
+    .small{font-size:14px;color:var(--muted)}
+    .controls{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;justify-content:center}
+    footer{margin-top:14px;color:var(--muted);font-size:13px}
+    @media (max-width:980px){
+      #stage{flex-direction:column;align-items:center}
+      #sidebar{width:100%}
+    }
+    /* small fallback message */
+    .no-js {
+      display:none;
+      background:#2a2a2a;color:#fff;padding:8px;border-radius:6px;margin:8px 0;font-size:13px;
+    }
+    html.no-js .no-js { display:block; }
+  </style>
+</head>
+<body>
+  <script>document.documentElement.classList.remove('no-js');</script>
+
+  <header>
+    <h1>ninjafight — Smash-lite</h1>
+    <div id="status"><span class="muted">Controls:</span>&nbsp;<span class="muted">A/D or ←/→</span>&nbsp;<span class="muted">W / ↑ = jump</span>&nbsp;<span class="muted">K or Space = attack</span></div>
+  </header>
+
+  <div class="no-js">This game requires JavaScript. Please enable JS in your browser to play.</div>
+
+  <div id="ui">
+    <div id="stage">
+      <div id="canvas-wrap">
+        <canvas id="game" width="960" height="540" aria-label="ninjafight game canvas"></canvas>
+      </div>
+
+      <div id="sidebar">
+        <div class="panel">
+          <div class="label">1) Choose your character</div>
+          <div id="char-grid" class="chars" aria-label="Character selection"></div>
+        </div>
+
+        <div class="panel">
+          <div class="label">2) Choose a map</div>
+          <div id="map-grid" class="maps" aria-label="Map selection"></div>
+        </div>
+
+        <div class="panel center">
+          <button id="startBtn">Start Match</button>
+          <button id="randomBtn" style="margin-left:8px;background:linear-gradient(180deg,#2b3c4d,#1a2a37)">Random</button>
+        </div>
+
+        <div class="panel">
+          <div class="label">Match info</div>
+          <div id="matchInfo" class="muted">Select character & map, then Start Match.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div id="modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div id="resultTitle" class="big"></div>
+      <div id="resultText" class="small" style="margin-bottom:12px"></div>
+      <div class="controls">
+        <button id="chooseBtn">Choose Another Character</button>
+        <button id="rematchBtn">Rematch (same selections)</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>10 characters • 5 maps • Simple AI opponent</footer>
+
+  <!-- Module-based game script (requires the js/ files: character.js, ai.js, game.js) -->
+  <script type="module" src="./js/game.js"></script>
+</body>
+</html>
